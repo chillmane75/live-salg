@@ -1,74 +1,136 @@
-// Init data hvis det ikke finnes
-if (!localStorage.getItem("sales")) {
-  localStorage.setItem(
-    "sales",
-    JSON.stringify({
-      a: 0,
-      b: 0,
-      milestones: { a: [], b: [] }
-    })
-  );
+// INIT
+if (!localStorage.getItem("products")) {
+  localStorage.setItem("products", JSON.stringify([
+    { id: 1, name: "Produkt A", count: 0, milestones: [] },
+    { id: 2, name: "Produkt B", count: 0, milestones: [] }
+  ]));
 }
 
-// ADMIN: selg produkt
-function sell(product) {
-  const data = JSON.parse(localStorage.getItem("sales"));
-  data[product]++;
-  localStorage.setItem("sales", JSON.stringify(data));
+let confirmAction = null;
+
+// HENT
+function getProducts() {
+  return JSON.parse(localStorage.getItem("products"));
 }
 
-// LIVE: oppdater visning + konfetti
-function updateLive() {
-  const data = JSON.parse(localStorage.getItem("sales"));
-
-  if (!data) return;
-
-  document.getElementById("count-a")?.innerText = data.a;
-  document.getElementById("count-b")?.innerText = data.b;
-
-  checkMilestone("a", data.a, data);
-  checkMilestone("b", data.b, data);
-
-  localStorage.setItem("sales", JSON.stringify(data));
+function saveProducts(p) {
+  localStorage.setItem("products", JSON.stringify(p));
 }
 
-// Sjekk 5 / 10 / 15 osv
-function checkMilestone(product, count, data) {
-  if (count > 0 && count % 5 === 0) {
-    if (!data.milestones[product].includes(count)) {
-      data.milestones[product].push(count);
-      launchConfetti();
-    }
+// ADMIN + LIVE RENDER
+function render(admin = false) {
+  const box = document.getElementById("products");
+  if (!box) return;
+
+  box.innerHTML = "";
+  const products = getProducts();
+
+  products.forEach(p => {
+    const div = document.createElement("div");
+    div.className = "product";
+    div.innerHTML = `
+      <h3>${p.name}</h3>
+      <p>Solgt: ${p.count}</p>
+      ${admin ? `
+        <button onclick="sell(${p.id})">Solgt</button>
+        <button onclick="askConfirm(() => deleteProduct(${p.id}))">Slett</button>
+      ` : ""}
+    `;
+    box.appendChild(div);
+  });
+
+  if (admin) {
+    box.innerHTML += `
+      <button onclick="askConfirm(resetAll)">🔁 Reset alt</button>
+    `;
   }
 }
 
-// Enkel konfetti (ingen bibliotek)
-function launchConfetti() {
-  for (let i = 0; i < 30; i++) {
-    const confetti = document.createElement("div");
-    confetti.style.position = "fixed";
-    confetti.style.top = "-10px";
-    confetti.style.left = Math.random() * 100 + "vw";
-    confetti.style.width = "10px";
-    confetti.style.height = "10px";
-    confetti.style.background = "hsl(" + Math.random() * 360 + ",100%,50%)";
-    confetti.style.animation = "fall 2s linear";
-    document.body.appendChild(confetti);
+// SELG
+function sell(id) {
+  const p = getProducts();
+  const prod = p.find(x => x.id === id);
+  prod.count++;
 
-    setTimeout(() => confetti.remove(), 2000);
+  if (prod.count % 5 === 0 && !prod.milestones.includes(prod.count)) {
+    prod.milestones.push(prod.count);
+    confetti();
+  }
+
+  saveProducts(p);
+  render(true);
+}
+
+// ADD
+function addProduct() {
+  const name = document.getElementById("newName").value.trim();
+  if (!name) return;
+
+  const p = getProducts();
+  p.push({ id: Date.now(), name, count: 0, milestones: [] });
+  saveProducts(p);
+
+  closeAdd();
+  render(true);
+}
+
+// DELETE
+function deleteProduct(id) {
+  saveProducts(getProducts().filter(p => p.id !== id));
+  closeConfirm();
+  render(true);
+}
+
+// RESET
+function resetAll() {
+  getProducts().forEach(p => {
+    p.count = 0;
+    p.milestones = [];
+  });
+  saveProducts(getProducts());
+  closeConfirm();
+  render(true);
+}
+
+// CONFIRM
+function askConfirm(action) {
+  confirmAction = action;
+  document.getElementById("confirmBox").classList.remove("hidden");
+  document.getElementById("yesBtn").onclick = () => confirmAction();
+}
+function closeConfirm() {
+  document.getElementById("confirmBox").classList.add("hidden");
+}
+
+// ADD MODAL
+function openAdd() {
+  document.getElementById("addBox").classList.remove("hidden");
+}
+function closeAdd() {
+  document.getElementById("addBox").classList.add("hidden");
+}
+
+// CONFETTI
+function confetti() {
+  for (let i = 0; i < 25; i++) {
+    const c = document.createElement("div");
+    c.style.position = "fixed";
+    c.style.left = Math.random() * 100 + "vw";
+    c.style.top = "-10px";
+    c.style.width = "8px";
+    c.style.height = "8px";
+    c.style.background = `hsl(${Math.random()*360},100%,50%)`;
+    c.style.animation = "fall 2s linear";
+    document.body.appendChild(c);
+    setTimeout(() => c.remove(), 2000);
   }
 }
 
-// Polling (fake real-time)
-setInterval(updateLive, 1000);
+// FALL ANIM
+const s = document.createElement("style");
+s.innerHTML = `@keyframes fall { to { transform: translateY(100vh); } }`;
+document.head.appendChild(s);
 
-// CSS animation via JS
-const style = document.createElement("style");
-style.innerHTML = `
-@keyframes fall {
-  to {
-    transform: translateY(100vh) rotate(360deg);
-    opacity: 0;
-  }
-}`;
-document.head.appendChild(style);
+// AUTO
+setInterval(() => render(false), 1000);
+render(document.title.includes("Admin"));
