@@ -1,5 +1,5 @@
 body {
-  font-family: Arial, sans-serif;
+  font-family: Arial;
   background: #111;
   color: white;
   text-align: center;
@@ -8,14 +8,34 @@ body {
 
 .product {
   border: 2px solid #444;
-  padding: 20px;
-  margin: 20px auto;
-  max-width: 300px;
+  margin: 15px auto;
+  padding: 15px;
+  max-width: 320px;
   border-radius: 10px;
 }
 
 button {
-  padding: 15px 30px;
-  font-size: 18px;
+  margin: 5px;
+  padding: 10px 15px;
   cursor: pointer;
+}
+
+.top-btn {
+  position: fixed;
+  top: 15px;
+  right: 15px;
+}
+
+.modal {
+  position: fixed;
+  top: 40%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: #222;
+  padding: 20px;
+  border: 2px solid #555;
+}
+
+.hidden {
+  display: none;
 }
