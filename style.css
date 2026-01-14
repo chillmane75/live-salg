@@ -39,3 +39,43 @@ button {
 .hidden {
   display: none;
 }
+.progress-wrapper {
+  margin: 30px auto;
+  max-width: 600px;
+}
+
+.product-name {
+  text-align: center;
+  margin-bottom: 10px;
+  font-weight: bold;
+}
+
+.progress-bar {
+  position: relative;
+  height: 25px;
+  background: #333;
+  border-radius: 20px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: limegreen;
+  width: 0%;
+  transition: width 0.4s;
+}
+
+.tick {
+  position: absolute;
+  top: -20px;
+  width: 2px;
+  height: 45px;
+  background: white;
+}
+
+.tick span {
+  position: absolute;
+  top: -18px;
+  left: -10px;
+  font-size: 12px;
+}
