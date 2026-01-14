@@ -1,21 +1,30 @@
 <!DOCTYPE html>
 <html lang="no">
 <head>
-  <meta charset="UTF-8" />
-  <title>Admin – Salg</title>
-  <link rel="stylesheet" href="style.css" />
+  <meta charset="UTF-8">
+  <title>Admin</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <h1>🧾 Admin / Selger</h1>
 
-  <div class="product">
-    <h2>Produkt A</h2>
-    <button onclick="sell('a')">Solgt</button>
+  <button class="top-btn" onclick="openAdd()">➕ Add</button>
+
+  <h1>🧾 Admin</h1>
+  <div id="products"></div>
+
+  <!-- Add produkt -->
+  <div id="addBox" class="modal hidden">
+    <h3>Nytt produkt</h3>
+    <input id="newName" placeholder="Produktnavn">
+    <button onclick="addProduct()">Add</button>
+    <button onclick="closeAdd()">Avbryt</button>
   </div>
 
-  <div class="product">
-    <h2>Produkt B</h2>
-    <button onclick="sell('b')">Solgt</button>
+  <!-- Confirm -->
+  <div id="confirmBox" class="modal hidden">
+    <p>Er du sikker?</p>
+    <button id="yesBtn">Ja</button>
+    <button onclick="closeConfirm()">Nei</button>
   </div>
 
   <script src="app.js"></script>
