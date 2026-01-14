@@ -1,117 +1,162 @@
-// INIT
+/********************
+ * INIT DATA
+ ********************/
 if (!localStorage.getItem("products")) {
-  localStorage.setItem("products", JSON.stringify([
-    { id: 1, name: "Produkt A", count: 0, milestones: [] },
-    { id: 2, name: "Produkt B", count: 0, milestones: [] }
-  ]));
+  localStorage.setItem(
+    "products",
+    JSON.stringify([
+      { id: 1, name: "Produkt A", count: 0, milestones: [] },
+      { id: 2, name: "Produkt B", count: 0, milestones: [] }
+    ])
+  );
 }
 
-let confirmAction = null;
-
-// HENT
+/********************
+ * HELPERS
+ ********************/
 function getProducts() {
-  return JSON.parse(localStorage.getItem("products"));
+  return JSON.parse(localStorage.getItem("products")) || [];
 }
 
-function saveProducts(p) {
-  localStorage.setItem("products", JSON.stringify(p));
+function saveProducts(products) {
+  localStorage.setItem("products", JSON.stringify(products));
 }
 
-// ADMIN + LIVE RENDER
-function render(admin = false) {
-  const box = document.getElementById("products");
-  if (!box) return;
+/********************
+ * RENDER
+ ********************/
+function render(isAdmin) {
+  const container = document.getElementById("products");
+  if (!container) return;
 
-  box.innerHTML = "";
+  container.innerHTML = "";
   const products = getProducts();
 
   products.forEach(p => {
     const div = document.createElement("div");
     div.className = "product";
+
     div.innerHTML = `
       <h3>${p.name}</h3>
       <p>Solgt: ${p.count}</p>
-      ${admin ? `
+      ${
+        isAdmin
+          ? `
         <button onclick="sell(${p.id})">Solgt</button>
         <button onclick="askConfirm(() => deleteProduct(${p.id}))">Slett</button>
-      ` : ""}
+      `
+          : ""
+      }
     `;
-    box.appendChild(div);
+
+    container.appendChild(div);
   });
 
-  if (admin) {
-    box.innerHTML += `
-      <button onclick="askConfirm(resetAll)">🔁 Reset alt</button>
-    `;
+  if (isAdmin) {
+    const resetBtn = document.createElement("button");
+    resetBtn.innerText = "🔁 Reset alt";
+    resetBtn.onclick = () => askConfirm(resetAll);
+    container.appendChild(resetBtn);
   }
 }
 
-// SELG
+/********************
+ * ADMIN ACTIONS
+ ********************/
 function sell(id) {
-  const p = getProducts();
-  const prod = p.find(x => x.id === id);
-  prod.count++;
+  const products = getProducts();
+  const product = products.find(p => p.id === id);
+  if (!product) return;
 
-  if (prod.count % 5 === 0 && !prod.milestones.includes(prod.count)) {
-    prod.milestones.push(prod.count);
-    confetti();
+  product.count++;
+
+  // Milestone 5 / 10 / 15 ...
+  if (
+    product.count > 0 &&
+    product.count % 5 === 0 &&
+    !product.milestones.includes(product.count)
+  ) {
+    product.milestones.push(product.count);
+    launchConfetti();
   }
 
-  saveProducts(p);
+  saveProducts(products);
   render(true);
 }
 
-// ADD
 function addProduct() {
-  const name = document.getElementById("newName").value.trim();
+  const input = document.getElementById("newName");
+  if (!input) return;
+
+  const name = input.value.trim();
   if (!name) return;
 
-  const p = getProducts();
-  p.push({ id: Date.now(), name, count: 0, milestones: [] });
-  saveProducts(p);
+  const products = getProducts();
+  products.push({
+    id: Date.now(),
+    name,
+    count: 0,
+    milestones: []
+  });
 
+  saveProducts(products);
+  input.value = "";
   closeAdd();
   render(true);
 }
 
-// DELETE
 function deleteProduct(id) {
-  saveProducts(getProducts().filter(p => p.id !== id));
+  const products = getProducts().filter(p => p.id !== id);
+  saveProducts(products);
   closeConfirm();
   render(true);
 }
 
-// RESET
 function resetAll() {
-  getProducts().forEach(p => {
+  const products = getProducts();
+  products.forEach(p => {
     p.count = 0;
     p.milestones = [];
   });
-  saveProducts(getProducts());
+
+  saveProducts(products);
   closeConfirm();
   render(true);
 }
 
-// CONFIRM
+/********************
+ * CONFIRM MODAL
+ ********************/
+let confirmAction = null;
+
 function askConfirm(action) {
   confirmAction = action;
-  document.getElementById("confirmBox").classList.remove("hidden");
-  document.getElementById("yesBtn").onclick = () => confirmAction();
+  document.getElementById("confirmBox")?.classList.remove("hidden");
+  document.getElementById("yesBtn").onclick = () => {
+    if (confirmAction) confirmAction();
+  };
 }
+
 function closeConfirm() {
-  document.getElementById("confirmBox").classList.add("hidden");
+  document.getElementById("confirmBox")?.classList.add("hidden");
+  confirmAction = null;
 }
 
-// ADD MODAL
+/********************
+ * ADD MODAL
+ ********************/
 function openAdd() {
-  document.getElementById("addBox").classList.remove("hidden");
-}
-function closeAdd() {
-  document.getElementById("addBox").classList.add("hidden");
+  document.getElementById("addBox")?.classList.remove("hidden");
 }
 
-// CONFETTI
-function confetti() {
+function closeAdd() {
+  document.getElementById("addBox")?.classList.add("hidden");
+}
+
+/********************
+ * CONFETTI
+ ********************/
+function launchConfetti() {
   for (let i = 0; i < 25; i++) {
     const c = document.createElement("div");
     c.style.position = "fixed";
@@ -119,18 +164,32 @@ function confetti() {
     c.style.top = "-10px";
     c.style.width = "8px";
     c.style.height = "8px";
-    c.style.background = `hsl(${Math.random()*360},100%,50%)`;
+    c.style.background = `hsl(${Math.random() * 360},100%,50%)`;
     c.style.animation = "fall 2s linear";
     document.body.appendChild(c);
     setTimeout(() => c.remove(), 2000);
   }
 }
 
-// FALL ANIM
-const s = document.createElement("style");
-s.innerHTML = `@keyframes fall { to { transform: translateY(100vh); } }`;
-document.head.appendChild(s);
+// Inject animation
+const style = document.createElement("style");
+style.innerHTML = `
+@keyframes fall {
+  to {
+    transform: translateY(100vh) rotate(360deg);
+    opacity: 0;
+  }
+}`;
+document.head.appendChild(style);
 
-// AUTO
-setInterval(() => render(false), 1000);
-render(document.title.includes("Admin"));
+/********************
+ * PAGE MODE
+ ********************/
+const isAdmin = window.location.pathname.includes("admin.html");
+
+if (isAdmin) {
+  render(true);
+} else {
+  render(false);
+  setInterval(() => render(false), 1000);
+}
