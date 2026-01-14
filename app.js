@@ -185,7 +185,9 @@ document.head.appendChild(style);
 /********************
  * PAGE MODE
  ********************/
-const isAdmin = window.location.pathname.includes("admin.html");
+const pageType = document.body.dataset.page;
+const isAdmin = pageType === "admin";
+
 
 if (isAdmin) {
   render(true);
