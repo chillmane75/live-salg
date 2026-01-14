@@ -1,31 +1,25 @@
 /********************
- * INIT DATA
+ * INIT
  ********************/
 if (!localStorage.getItem("products")) {
-  localStorage.setItem(
-    "products",
-    JSON.stringify([
-      { id: 1, name: "Produkt A", count: 0, milestones: [] },
-      { id: 2, name: "Produkt B", count: 0, milestones: [] }
-    ])
-  );
+  localStorage.setItem("products", JSON.stringify([
+    { id: 1, name: "Produkt A", count: 0, milestones: [] },
+    { id: 2, name: "Produkt B", count: 0, milestones: [] }
+  ]));
 }
 
-/********************
- * HELPERS
- ********************/
 function getProducts() {
   return JSON.parse(localStorage.getItem("products")) || [];
 }
 
-function saveProducts(products) {
-  localStorage.setItem("products", JSON.stringify(products));
+function saveProducts(p) {
+  localStorage.setItem("products", JSON.stringify(p));
 }
 
 /********************
- * RENDER
+ * LIVE RENDER
  ********************/
-function render(isAdmin) {
+function renderLive() {
   const container = document.getElementById("products");
   if (!container) return;
 
@@ -33,165 +27,90 @@ function render(isAdmin) {
   const products = getProducts();
 
   products.forEach(p => {
-    const div = document.createElement("div");
-    div.className = "product";
+    const wrapper = document.createElement("div");
+    wrapper.className = "progress-wrapper";
 
-    div.innerHTML = `
-      <h3>${p.name}</h3>
-      <p>Solgt: ${p.count}</p>
-      ${
-        isAdmin
-          ? `
-        <button onclick="sell(${p.id})">Solgt</button>
-        <button onclick="askConfirm(() => deleteProduct(${p.id}))">Slett</button>
-      `
-          : ""
-      }
+    const percent = Math.min(p.count, 100);
+
+    wrapper.innerHTML = `
+      <div class="product-name">${p.name}</div>
+
+      <div class="progress-bar">
+        <div class="progress-fill" style="width:${percent}%"></div>
+        ${generateTicks()}
+      </div>
+
+      <p style="text-align:center;">${p.count} solgt</p>
     `;
 
-    container.appendChild(div);
+    container.appendChild(wrapper);
+
+    // 🎉 Confetti per 5 mål
+    if (
+      p.count > 0 &&
+      p.count % 5 === 0 &&
+      !p.milestones.includes(p.count)
+    ) {
+      p.milestones.push(p.count);
+      launchConfetti();
+    }
   });
 
-  if (isAdmin) {
-    const resetBtn = document.createElement("button");
-    resetBtn.innerText = "🔁 Reset alt";
-    resetBtn.onclick = () => askConfirm(resetAll);
-    container.appendChild(resetBtn);
+  saveProducts(products);
+}
+
+/********************
+ * TICKS (hver 5)
+ ********************/
+function generateTicks() {
+  let html = "";
+  for (let i = 5; i <= 100; i += 5) {
+    html += `
+      <div class="tick" style="left:${i}%">
+        <span>${i}</span>
+      </div>
+    `;
   }
+  return html;
 }
 
 /********************
- * ADMIN ACTIONS
- ********************/
-function sell(id) {
-  const products = getProducts();
-  const product = products.find(p => p.id === id);
-  if (!product) return;
-
-  product.count++;
-
-  // Milestone 5 / 10 / 15 ...
-  if (
-    product.count > 0 &&
-    product.count % 5 === 0 &&
-    !product.milestones.includes(product.count)
-  ) {
-    product.milestones.push(product.count);
-    launchConfetti();
-  }
-
-  saveProducts(products);
-  render(true);
-}
-
-function addProduct() {
-  const input = document.getElementById("newName");
-  if (!input) return;
-
-  const name = input.value.trim();
-  if (!name) return;
-
-  const products = getProducts();
-  products.push({
-    id: Date.now(),
-    name,
-    count: 0,
-    milestones: []
-  });
-
-  saveProducts(products);
-  input.value = "";
-  closeAdd();
-  render(true);
-}
-
-function deleteProduct(id) {
-  const products = getProducts().filter(p => p.id !== id);
-  saveProducts(products);
-  closeConfirm();
-  render(true);
-}
-
-function resetAll() {
-  const products = getProducts();
-  products.forEach(p => {
-    p.count = 0;
-    p.milestones = [];
-  });
-
-  saveProducts(products);
-  closeConfirm();
-  render(true);
-}
-
-/********************
- * CONFIRM MODAL
- ********************/
-let confirmAction = null;
-
-function askConfirm(action) {
-  confirmAction = action;
-  document.getElementById("confirmBox")?.classList.remove("hidden");
-  document.getElementById("yesBtn").onclick = () => {
-    if (confirmAction) confirmAction();
-  };
-}
-
-function closeConfirm() {
-  document.getElementById("confirmBox")?.classList.add("hidden");
-  confirmAction = null;
-}
-
-/********************
- * ADD MODAL
- ********************/
-function openAdd() {
-  document.getElementById("addBox")?.classList.remove("hidden");
-}
-
-function closeAdd() {
-  document.getElementById("addBox")?.classList.add("hidden");
-}
-
-/********************
- * CONFETTI
+ * REAL CONFETTI
  ********************/
 function launchConfetti() {
-  for (let i = 0; i < 25; i++) {
+  for (let i = 0; i < 120; i++) {
     const c = document.createElement("div");
     c.style.position = "fixed";
     c.style.left = Math.random() * 100 + "vw";
     c.style.top = "-10px";
     c.style.width = "8px";
-    c.style.height = "8px";
+    c.style.height = "14px";
     c.style.background = `hsl(${Math.random() * 360},100%,50%)`;
-    c.style.animation = "fall 2s linear";
+    c.style.opacity = 0.9;
+    c.style.transform = `rotate(${Math.random() * 360}deg)`;
+    c.style.animation = `confettiFall ${2 + Math.random() * 2}s linear`;
     document.body.appendChild(c);
-    setTimeout(() => c.remove(), 2000);
+
+    setTimeout(() => c.remove(), 4000);
   }
 }
 
-// Inject animation
 const style = document.createElement("style");
 style.innerHTML = `
-@keyframes fall {
+@keyframes confettiFall {
   to {
-    transform: translateY(100vh) rotate(360deg);
+    transform: translateY(100vh) rotate(720deg);
     opacity: 0;
   }
 }`;
 document.head.appendChild(style);
 
 /********************
- * PAGE MODE
+ * MODE
  ********************/
-const pageType = document.body.dataset.page;
-const isAdmin = pageType === "admin";
+const page = document.body.dataset.page;
 
-
-if (isAdmin) {
-  render(true);
-} else {
-  render(false);
-  setInterval(() => render(false), 1000);
+if (page === "live") {
+  renderLive();
+  setInterval(renderLive, 1000);
 }
